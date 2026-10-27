@@ -1,5 +1,5 @@
+mod domain;
 mod http;
-mod models;
 mod state;
 
 use std::net::SocketAddr;
