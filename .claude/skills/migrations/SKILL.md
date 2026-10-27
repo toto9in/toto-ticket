@@ -23,7 +23,7 @@ Done when the migration is `installed` on the local database and the checks pass
 - Ids: `BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY` (maps to the domain's `u64` ids via `i64`).
 - Money: integer cents, `price_in_cents INTEGER NOT NULL`, mirroring the domain.
 - Timestamps: `TIMESTAMPTZ` (the domain uses `DateTime<Utc>`).
-- Domain enums (`ReservationStatus`, `OrderStatus`, ...): `TEXT` with a `CHECK (status IN (...))`.
+- Domain enums (`ReservationStatus`, `OrderStatus`, ...): Postgres enum, `CREATE TYPE reservation_status AS ENUM (...)`, snake_case type and values. New values go in a later migration with `ALTER TYPE ... ADD VALUE`.
 - Invariants the domain relies on go in the schema too, e.g. `CHECK (quantity >= 0)`.
 
 ## Changing the schema later
