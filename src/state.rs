@@ -1,16 +1,18 @@
-use sqlx::PgPool;
+use std::sync::Arc;
+
+use crate::application::create_ticket_offer::CreateTicketOffer;
 
 #[derive(Clone)]
 pub struct AppState {
     pub app_name: String,
-    pub db: PgPool,
+    pub create_ticket_offer: Arc<CreateTicketOffer>,
 }
 
 impl AppState {
-    pub fn new(db: PgPool) -> Self {
+    pub fn new(create_ticket_offer: Arc<CreateTicketOffer>) -> Self {
         Self {
             app_name: "toto-ticket".to_string(),
-            db,
+            create_ticket_offer,
         }
     }
 }

@@ -1,9 +1,13 @@
+mod application;
+mod domain;
 mod http;
-mod models;
+mod infrastructure;
 mod state;
 
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
+use application::create_ticket_offer::CreateTicketOffer;
+use infrastructure::postgres::PgTicketOfferRepository;
 use sqlx::postgres::PgPoolOptions;
 use state::AppState;
 
@@ -20,7 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = PgPoolOptions::new().connect(&database_url).await?;
     sqlx::migrate!().run(&db).await?;
 
-    let state = AppState::new(db);
+    let ticket_offers = Arc::new(PgTicketOfferRepository::new(db));
+    let state = AppState::new(Arc::new(CreateTicketOffer::new(ticket_offers)));
     let app = http::router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));

@@ -1,4 +1,11 @@
-use axum::{Json, Router, extract::State, routing::get};
+mod error;
+mod ticket_offers;
+
+use axum::{
+    Json, Router,
+    extract::State,
+    routing::{get, post},
+};
 use serde::Serialize;
 
 use crate::state::AppState;
@@ -6,6 +13,7 @@ use crate::state::AppState;
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
+        .route("/ticket-offers", post(ticket_offers::create))
         .with_state(state)
 }
 
