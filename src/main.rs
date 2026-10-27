@@ -4,15 +4,23 @@ mod state;
 
 use std::net::SocketAddr;
 
+use sqlx::postgres::PgPoolOptions;
 use state::AppState;
 
 const DEFAULT_PORT: u16 = 3000;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Loads variables from `.env` when the file exists; real env vars take precedence.
+    dotenvy::dotenv().ok();
+
     let port = port_from_args()?;
 
-    let state = AppState::new();
+    let database_url = std::env::var("DATABASE_URL").map_err(|_| "DATABASE_URL is not set")?;
+    let db = PgPoolOptions::new().connect(&database_url).await?;
+    sqlx::migrate!().run(&db).await?;
+
+    let state = AppState::new(db);
     let app = http::router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
