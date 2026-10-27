@@ -1,5 +1,39 @@
+mod http;
 mod models;
+mod state;
 
-fn main() {
-    println!("{}", 0.1 + 0.2);
+use std::net::SocketAddr;
+
+use state::AppState;
+
+const DEFAULT_PORT: u16 = 3000;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let port = port_from_args()?;
+
+    let state = AppState::new();
+    let app = http::router(state);
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    println!("listening on {}", listener.local_addr()?);
+
+    axum::serve(listener, app).await?;
+
+    Ok(())
+}
+
+/// Reads `--port <number>` from the command line, falling back to `DEFAULT_PORT`.
+fn port_from_args() -> Result<u16, String> {
+    let mut args = std::env::args().skip(1);
+
+    while let Some(arg) = args.next() {
+        if arg == "--port" {
+            let value = args.next().ok_or("missing value for --port")?;
+            return value.parse().map_err(|_| format!("invalid port: {value}"));
+        }
+    }
+
+    Ok(DEFAULT_PORT)
 }
