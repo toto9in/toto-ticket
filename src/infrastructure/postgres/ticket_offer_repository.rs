@@ -77,3 +77,56 @@ impl From<TicketZone> for TicketZoneRow {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A `ticket_offers` row with its enums read as text, so tests check what Postgres stored.
+    #[derive(Debug, PartialEq, sqlx::FromRow)]
+    struct StoredTicketOffer {
+        ticket_type: String,
+        tier: i16,
+        zone: String,
+        quantity: i32,
+        price_in_cents: i32,
+    }
+
+    async fn stored_ticket_offer(pool: &PgPool, id: u64) -> StoredTicketOffer {
+        let id = i64::try_from(id).expect("id fits in BIGINT");
+
+        sqlx::query_as(
+            "SELECT ticket_type::text AS ticket_type, tier, zone::text AS zone, quantity, price_in_cents
+             FROM ticket_offers
+             WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool)
+        .await
+        .expect("ticket offer row exists")
+    }
+
+    #[sqlx::test]
+    async fn create_persists_ticket_offer_under_returned_id(pool: PgPool) {
+        let repository = PgTicketOfferRepository::new(pool.clone());
+        let offer = NewTicketOffer::new(TicketType::HalfPrice, 2, TicketZone::Bleachers, 100, 5000)
+            .expect("ticket offer is valid");
+
+        let created = repository
+            .create(offer.clone())
+            .await
+            .expect("ticket offer is created");
+
+        assert_eq!(created, offer.with_id(created.id));
+        assert_eq!(
+            stored_ticket_offer(&pool, created.id).await,
+            StoredTicketOffer {
+                ticket_type: "half_price".to_owned(),
+                tier: 2,
+                zone: "bleachers".to_owned(),
+                quantity: 100,
+                price_in_cents: 5000,
+            }
+        );
+    }
+}

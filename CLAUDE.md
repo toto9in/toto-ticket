@@ -5,10 +5,12 @@
 ## Commands
 
 ```bash
-cargo run                   # run the binary
-cargo test                  # run tests
-cargo fmt                   # format
-cargo clippy --all-targets  # lint
+cargo run                       # run the binary
+cp .env.example .env            # DATABASE_URL for the app and integration tests
+docker compose up -d --wait db  # database for integration tests
+cargo test                      # run tests
+cargo fmt                       # format
+cargo clippy --all-targets      # lint
 ```
 
 Before finishing a change: `cargo fmt --check && cargo clippy --all-targets && cargo test`.

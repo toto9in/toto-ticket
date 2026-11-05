@@ -46,12 +46,12 @@ pub struct TicketOffer {
 }
 
 impl TicketOffer {
-    pub fn reserve(&mut self) -> Result<(), ReservationError> {
-        if self.quantity == 0 {
+    pub fn reserve(&mut self, quantity: u32) -> Result<(), ReservationError> {
+        if quantity > self.quantity {
             return Err(ReservationError::InsufficientQuantity);
         }
 
-        self.quantity -= 1;
+        self.quantity -= quantity;
 
         Ok(())
     }
@@ -132,36 +132,45 @@ impl NewTicketOffer {
 mod tests {
     use super::*;
 
-    #[test]
-    fn success_reservation_scenario() {
-        let mut ticket_offer = TicketOffer {
+    fn ticket_offer_with_quantity(quantity: u32) -> TicketOffer {
+        TicketOffer {
             id: 1,
             ticket_type: TicketType::FullPrice,
             tier: 1,
             zone: TicketZone::VipBox,
-            quantity: 50,
+            quantity,
             price_in_cents: 25000,
-        };
-
-        assert!(ticket_offer.reserve().is_ok());
-        assert_eq!(ticket_offer.quantity, 49);
+        }
     }
 
     #[test]
-    fn failure_reservation_scenario() {
-        let mut ticket_offer = TicketOffer {
-            id: 2,
-            ticket_type: TicketType::FullPrice,
-            tier: 1,
-            zone: TicketZone::VipBox,
-            quantity: 0,
-            price_in_cents: 25000,
-        };
+    fn reserving_less_than_available_subtracts_the_quantity() {
+        let mut ticket_offer = ticket_offer_with_quantity(50);
 
-        assert_eq!(
-            ticket_offer.reserve(),
-            Err(ReservationError::InsufficientQuantity),
-        );
+        let result = ticket_offer.reserve(2);
+
+        assert!(result.is_ok());
+        assert_eq!(ticket_offer.quantity, 48);
+    }
+
+    #[test]
+    fn reserving_exactly_the_available_quantity_leaves_none() {
+        let mut ticket_offer = ticket_offer_with_quantity(5);
+
+        let result = ticket_offer.reserve(5);
+
+        assert!(result.is_ok());
+        assert_eq!(ticket_offer.quantity, 0);
+    }
+
+    #[test]
+    fn reserving_more_than_available_fails_and_keeps_the_quantity() {
+        let mut ticket_offer = ticket_offer_with_quantity(5);
+
+        let result = ticket_offer.reserve(6);
+
+        assert_eq!(result, Err(ReservationError::InsufficientQuantity));
+        assert_eq!(ticket_offer.quantity, 5);
     }
 
     #[test]
