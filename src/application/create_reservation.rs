@@ -30,12 +30,12 @@ impl From<RepositoryError> for CreateReservationError {
 }
 
 pub struct CreateReservation {
-    repo: Arc<dyn ReservationRepository>,
+    repository: Arc<dyn ReservationRepository>,
 }
 
 impl CreateReservation {
-    pub fn new(repo: Arc<dyn ReservationRepository>) -> Self {
-        Self { repo }
+    pub fn new(repository: Arc<dyn ReservationRepository>) -> Self {
+        Self { repository }
     }
 
     pub async fn execute(
@@ -49,7 +49,7 @@ impl CreateReservation {
             Utc::now(),
         )?;
 
-        Ok(self.repo.reserve(reservation).await?)
+        Ok(self.repository.reserve(reservation).await?)
     }
 }
 

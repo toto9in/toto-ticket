@@ -111,7 +111,7 @@ mod tests {
     }
 
     async fn post(
-        repo: Arc<FakeReservationRepository>,
+        repository: Arc<FakeReservationRepository>,
         ticket_offer_id: u64,
         body: Value,
     ) -> TestResult<(StatusCode, Value)> {
@@ -119,7 +119,7 @@ mod tests {
             Arc::new(CreateTicketOffer::new(Arc::new(
                 FakeTicketOfferRepository::default(),
             ))),
-            Arc::new(CreateReservation::new(repo)),
+            Arc::new(CreateReservation::new(repository)),
         );
 
         let request = Request::post(format!("/ticket-offers/{ticket_offer_id}/reservations"))
@@ -135,12 +135,13 @@ mod tests {
 
     #[tokio::test]
     async fn reserves_tickets_from_a_ticket_offer() -> TestResult {
-        let repo = Arc::new(FakeReservationRepository::with_ticket_offer(ticket_offer(
+        let repository = Arc::new(FakeReservationRepository::with_ticket_offer(ticket_offer(
             3, 50,
         )));
         let requested_at = Utc::now();
 
-        let (status, body) = post(repo, 3, json!({ "customer_id": 42, "quantity": 2 })).await?;
+        let (status, body) =
+            post(repository, 3, json!({ "customer_id": 42, "quantity": 2 })).await?;
 
         let expires_at: DateTime<Utc> = body["expires_at"].as_str().unwrap_or_default().parse()?;
         assert_eq!(status, StatusCode::CREATED);
@@ -163,13 +164,18 @@ mod tests {
 
     #[tokio::test]
     async fn reserving_takes_the_quantity_from_the_ticket_offer() -> TestResult {
-        let repo = Arc::new(FakeReservationRepository::with_ticket_offer(ticket_offer(
+        let repository = Arc::new(FakeReservationRepository::with_ticket_offer(ticket_offer(
             3, 50,
         )));
 
-        post(repo.clone(), 3, json!({ "customer_id": 42, "quantity": 2 })).await?;
+        post(
+            repository.clone(),
+            3,
+            json!({ "customer_id": 42, "quantity": 2 }),
+        )
+        .await?;
 
-        let quantities: Vec<u32> = repo
+        let quantities: Vec<u32> = repository
             .ticket_offers
             .lock()
             .map(|offers| offers.iter().map(|offer| offer.quantity).collect())
@@ -181,16 +187,27 @@ mod tests {
 
     #[tokio::test]
     async fn rejects_zero_quantity_without_reserving() -> TestResult {
-        let repo = Arc::new(FakeReservationRepository::with_ticket_offer(ticket_offer(
+        let repository = Arc::new(FakeReservationRepository::with_ticket_offer(ticket_offer(
             3, 50,
         )));
 
-        let (status, body) =
-            post(repo.clone(), 3, json!({ "customer_id": 42, "quantity": 0 })).await?;
+        let (status, body) = post(
+            repository.clone(),
+            3,
+            json!({ "customer_id": 42, "quantity": 0 }),
+        )
+        .await?;
 
         assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
         assert_eq!(body, json!({ "error": "quantity must be greater than 0" }));
-        assert_eq!(repo.reservations.lock().map(|r| r.len()).ok(), Some(0));
+        assert_eq!(
+            repository
+                .reservations
+                .lock()
+                .map(|reservations| reservations.len())
+                .ok(),
+            Some(0)
+        );
 
         Ok(())
     }
