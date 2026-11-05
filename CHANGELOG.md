@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/toto9in/toto-ticket/compare/v0.2.0...v0.3.0) (2026-11-05)
+
+
+### Features
+
+* **reservation:** customer reserves tickets from a ticket offer ([#20](https://github.com/toto9in/toto-ticket/issues/20)) ([f8e8149](https://github.com/toto9in/toto-ticket/commit/f8e81494f76f94fd34abe8d9736b57c917c751a8))
+
 ## [0.2.0](https://github.com/toto9in/toto-ticket/compare/v0.1.0...v0.2.0) (2026-10-27)
 
 
