@@ -1,30 +1,23 @@
 use chrono::{DateTime, Utc};
 
-pub enum OrderStatus {
-    Pending,
-    Confirmed,
-    Cancelled,
-    Expired,
-}
-
 #[derive(Debug, PartialEq)]
 pub enum ReservationStatus {
-    Valid,
+    Active,
     Expired,
-    Converted,
+    Purchased,
 }
 
 pub struct Reservation {
     pub id: u64,
     pub ticket_offer_id: u64,
-    pub client_id: u64,
+    pub customer_id: u64,
     pub status: ReservationStatus,
     pub expires_at: DateTime<Utc>,
 }
 
 impl Reservation {
     pub fn try_expire(&mut self, time_now: DateTime<Utc>) -> bool {
-        if self.status.eq(&ReservationStatus::Valid) && time_now.ge(&self.expires_at) {
+        if self.status.eq(&ReservationStatus::Active) && time_now.ge(&self.expires_at) {
             self.status = ReservationStatus::Expired;
 
             return true;
@@ -39,7 +32,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn reservation_expired_scenario() {
+    fn active_reservation_expires_after_its_expiry_time() {
         use chrono::TimeDelta;
 
         let now = Utc::now();
@@ -49,8 +42,8 @@ mod tests {
         let mut reservation = Reservation {
             id: 1,
             ticket_offer_id: 1,
-            client_id: 1,
-            status: ReservationStatus::Valid,
+            customer_id: 1,
+            status: ReservationStatus::Active,
             expires_at: ten_minutes_before,
         };
 
@@ -59,7 +52,7 @@ mod tests {
     }
 
     #[test]
-    fn converted_reservation_stills_converted_after_time_is_expired() {
+    fn purchased_reservation_stays_purchased_after_its_expiry_time() {
         use chrono::TimeDelta;
 
         let now = Utc::now();
@@ -69,17 +62,17 @@ mod tests {
         let mut reservation = Reservation {
             id: 1,
             ticket_offer_id: 1,
-            client_id: 1,
-            status: ReservationStatus::Converted,
+            customer_id: 1,
+            status: ReservationStatus::Purchased,
             expires_at: ten_minutes_before,
         };
 
         assert!(!reservation.try_expire(one_hour_later));
-        assert_eq!(reservation.status, ReservationStatus::Converted);
+        assert_eq!(reservation.status, ReservationStatus::Purchased);
     }
 
     #[test]
-    fn expired_reservation_stills_expired() {
+    fn expired_reservation_stays_expired() {
         use chrono::TimeDelta;
 
         let now = Utc::now();
@@ -89,8 +82,8 @@ mod tests {
         let mut reservation = Reservation {
             id: 1,
             ticket_offer_id: 1,
-            client_id: 1,
-            status: ReservationStatus::Valid,
+            customer_id: 1,
+            status: ReservationStatus::Active,
             expires_at: ten_minutes_before,
         };
 
