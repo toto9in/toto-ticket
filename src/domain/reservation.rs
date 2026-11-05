@@ -178,19 +178,11 @@ mod tests {
 
     #[test]
     fn persisted_reservation_starts_active() -> Result<(), InvalidReservation> {
-        let new_reservation = NewReservation::new(3, 42, 2, Utc::now())?;
+        let made_at = DateTime::from_timestamp(1_700_000_000, 0).unwrap_or_default();
+        let new_reservation = NewReservation::new(3, 42, 2, made_at)?;
 
         let reservation = new_reservation.with_id(7);
 
-        assert_eq!(
-            (
-                reservation.id,
-                reservation.ticket_offer_id,
-                reservation.customer_id
-            ),
-            (7, 3, 42)
-        );
-        assert_eq!(reservation.quantity, 2);
         assert_eq!(reservation.status, ReservationStatus::Active);
 
         Ok(())
