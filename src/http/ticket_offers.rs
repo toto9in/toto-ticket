@@ -118,6 +118,8 @@ mod tests {
     use serde_json::{Value, json};
     use tower::ServiceExt;
 
+    use crate::application::create_reservation::CreateReservation;
+    use crate::application::create_reservation::tests::FakeReservationRepository;
     use crate::application::create_ticket_offer::CreateTicketOffer;
     use crate::application::create_ticket_offer::tests::FakeTicketOfferRepository;
     use crate::http::router;
@@ -128,7 +130,12 @@ mod tests {
 
     async fn post(body: Value) -> TestResult<(StatusCode, Value)> {
         let repo = Arc::new(FakeTicketOfferRepository::default());
-        let state = AppState::new(Arc::new(CreateTicketOffer::new(repo)));
+        let state = AppState::new(
+            Arc::new(CreateTicketOffer::new(repo)),
+            Arc::new(CreateReservation::new(Arc::new(
+                FakeReservationRepository::default(),
+            ))),
+        );
 
         let request = Request::post("/ticket-offers")
             .header("content-type", "application/json")

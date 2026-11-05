@@ -1,4 +1,5 @@
 mod error;
+mod reservations;
 mod ticket_offers;
 
 use axum::{
@@ -14,6 +15,10 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/ticket-offers", post(ticket_offers::create))
+        .route(
+            "/ticket-offers/{ticket_offer_id}/reservations",
+            post(reservations::create),
+        )
         .with_state(state)
 }
 
