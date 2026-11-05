@@ -6,6 +6,7 @@
 
 ```bash
 cargo run                   # run the binary
+docker compose up -d --wait db  # database for integration tests
 cargo test                  # run tests
 cargo fmt                   # format
 cargo clippy --all-targets  # lint
