@@ -22,6 +22,10 @@ unwrap_used = "warn"
 expect_used = "warn"
 dbg_macro = "warn"
 todo = "warn"
+cognitive_complexity = "warn"
+excessive_nesting = "warn"
+panic = "warn"
+allow_attributes_without_reason = "warn"
 
 [dev-dependencies]
 http-body-util = "0.1.5"

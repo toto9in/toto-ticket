@@ -1,0 +1,7 @@
+too-many-arguments-threshold = 5
+too-many-lines-threshold = 50
+cognitive-complexity-threshold = 10
+excessive-nesting-threshold = 5
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
