@@ -29,68 +29,47 @@ impl Reservation {
 
 #[cfg(test)]
 mod tests {
+    use chrono::TimeDelta;
+
     use super::*;
 
-    #[test]
-    fn active_reservation_expires_after_its_expiry_time() {
-        use chrono::TimeDelta;
-
-        let now = Utc::now();
-        let one_hour_later = now + TimeDelta::hours(1);
-        let ten_minutes_before = now - TimeDelta::minutes(10);
-
-        let mut reservation = Reservation {
+    fn reservation_past_its_expiry(status: ReservationStatus) -> Reservation {
+        Reservation {
             id: 1,
             ticket_offer_id: 1,
             customer_id: 1,
-            status: ReservationStatus::Active,
-            expires_at: ten_minutes_before,
-        };
+            status,
+            expires_at: Utc::now() - TimeDelta::minutes(10),
+        }
+    }
 
-        assert!(reservation.try_expire(one_hour_later));
+    #[test]
+    fn active_reservation_expires_after_its_expiry_time() {
+        let mut reservation = reservation_past_its_expiry(ReservationStatus::Active);
+
+        let expired = reservation.try_expire(Utc::now());
+
+        assert!(expired);
         assert_eq!(reservation.status, ReservationStatus::Expired);
     }
 
     #[test]
     fn purchased_reservation_stays_purchased_after_its_expiry_time() {
-        use chrono::TimeDelta;
+        let mut reservation = reservation_past_its_expiry(ReservationStatus::Purchased);
 
-        let now = Utc::now();
-        let one_hour_later = now + TimeDelta::hours(1);
-        let ten_minutes_before = now - TimeDelta::minutes(10);
+        let expired = reservation.try_expire(Utc::now());
 
-        let mut reservation = Reservation {
-            id: 1,
-            ticket_offer_id: 1,
-            customer_id: 1,
-            status: ReservationStatus::Purchased,
-            expires_at: ten_minutes_before,
-        };
-
-        assert!(!reservation.try_expire(one_hour_later));
+        assert!(!expired);
         assert_eq!(reservation.status, ReservationStatus::Purchased);
     }
 
     #[test]
     fn expired_reservation_stays_expired() {
-        use chrono::TimeDelta;
+        let mut reservation = reservation_past_its_expiry(ReservationStatus::Expired);
 
-        let now = Utc::now();
-        let one_hour_later = now + TimeDelta::hours(1);
-        let ten_minutes_before = now - TimeDelta::minutes(10);
+        let expired = reservation.try_expire(Utc::now());
 
-        let mut reservation = Reservation {
-            id: 1,
-            ticket_offer_id: 1,
-            customer_id: 1,
-            status: ReservationStatus::Active,
-            expires_at: ten_minutes_before,
-        };
-
-        assert!(reservation.try_expire(one_hour_later));
-        assert_eq!(reservation.status, ReservationStatus::Expired);
-
-        assert!(!reservation.try_expire(one_hour_later));
+        assert!(!expired);
         assert_eq!(reservation.status, ReservationStatus::Expired);
     }
 }
