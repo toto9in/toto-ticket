@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::Serialize;
 
+use crate::application::create_reservation::CreateReservationError;
 use crate::application::create_ticket_offer::CreateTicketOfferError;
 
 pub struct ApiError {
@@ -37,13 +38,34 @@ impl From<CreateTicketOfferError> for ApiError {
                 message: error.to_string(),
             },
             CreateTicketOfferError::Repository(error) => {
-                eprintln!("failed to create ticket offer: {error:?}");
-
-                Self {
-                    status: StatusCode::INTERNAL_SERVER_ERROR,
-                    message: "internal server error".to_string(),
-                }
+                Self::internal("failed to create ticket offer", &error)
             }
+        }
+    }
+}
+
+impl From<CreateReservationError> for ApiError {
+    fn from(error: CreateReservationError) -> Self {
+        match error {
+            CreateReservationError::Invalid(error) => Self {
+                status: StatusCode::UNPROCESSABLE_ENTITY,
+                message: error.to_string(),
+            },
+            CreateReservationError::Repository(error) => {
+                Self::internal("failed to create reservation", &error)
+            }
+        }
+    }
+}
+
+impl ApiError {
+    /// Logs the cause and hides it from the client.
+    fn internal(context: &str, error: &impl std::fmt::Debug) -> Self {
+        eprintln!("{context}: {error:?}");
+
+        Self {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            message: "internal server error".to_string(),
         }
     }
 }

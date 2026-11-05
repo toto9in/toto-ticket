@@ -6,8 +6,9 @@ mod state;
 
 use std::{net::SocketAddr, sync::Arc};
 
+use application::create_reservation::CreateReservation;
 use application::create_ticket_offer::CreateTicketOffer;
-use infrastructure::postgres::PgTicketOfferRepository;
+use infrastructure::postgres::{PgReservationRepository, PgTicketOfferRepository};
 use sqlx::postgres::PgPoolOptions;
 use state::AppState;
 
@@ -24,8 +25,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = PgPoolOptions::new().connect(&database_url).await?;
     sqlx::migrate!().run(&db).await?;
 
-    let ticket_offers = Arc::new(PgTicketOfferRepository::new(db));
-    let state = AppState::new(Arc::new(CreateTicketOffer::new(ticket_offers)));
+    let ticket_offers = Arc::new(PgTicketOfferRepository::new(db.clone()));
+    let reservations = Arc::new(PgReservationRepository::new(db));
+    let state = AppState::new(
+        Arc::new(CreateTicketOffer::new(ticket_offers)),
+        Arc::new(CreateReservation::new(reservations)),
+    );
     let app = http::router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
